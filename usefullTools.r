@@ -11,6 +11,14 @@ test.reco <- function(true, pred) {
   cres <- max.col(pred)
   return (as.numeric(sum(true == cres)))
 }
+
+#compute the MSE
+test.mse <- function(true, pred) {
+  diff <- true - pred
+  sqred <- diff * diff
+  return (sum(sqred) / length(sqred))
+}
+
 # convert a vector of classes in a matrix of 0 and 1 (objectif value matrix)
 class.ind <- function (cl) 
 {
@@ -40,4 +48,71 @@ loadAll <- function(rootName){
     cl <- c(cl, rep(i,dim(obs)[1]))
   }
   return (list(obs=allobs, cl=cl))
+}
+
+learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop){
+  # init a new random MLP
+  # nbN : nombre de neurones dans la couche cachée
+  # pas d'iter pour avec un nn aléatoire
+  
+  new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=0, decay=1e-4, rang = 1)
+  best_nn = new_nn
+  curr_w <- new_nn$wts
+  # compute initial rates / mse and save them
+  currTrRate <- test.reco(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
+  currTrRateVal <- test.reco(dataTarg[valId,], predict(new_nn,dataFt[valId,]))
+  currTrMSE <- test.mse(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
+  currTrMSEVal <- test.mse(dataTarg[valId,], predict(new_nn,dataFt[valId,]))
+  
+  scoresT <- c(currTrRate/length(trainId))
+  scoresV <- c(currTrRateVal/length(valId))
+  mseT <- c(currTrMSE)
+  mseV <- c(currTrMSEVal)
+  iterations <- c(0)
+  bestRate <- 0  
+  bestIt <- 0
+  cat("Starting Reco rate = ",currTrRate,"\n")
+  for(i in 1:nbLoop){
+    cat(i," / ", nbLoop, "\n")
+    #continue the training
+    new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=50, decay=1e-4, Wts=curr_w)
+    curr_w <- new_nn$wts
+    #compute the rates/MSE
+    currTrRate <- test.reco(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
+    currTrRateVal <- test.reco(dataTarg[valId,], predict(new_nn,dataFt[valId,]))
+    currTrMSE <- test.mse(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
+    currTrMSEVal <- test.mse(dataTarg[valId,], predict(new_nn,dataFt[valId,]))
+    
+    #save values to plot
+    scoresT <- c(scoresT,currTrRate/length(trainId))
+    scoresV <- c(scoresV,currTrRateVal/length(valId))
+    mseT <- c(mseT,currTrMSE)
+    mseV <- c(mseV,currTrMSEVal)
+    iterations <- c(iterations, i * 50)
+    #save if best
+    if(currTrRateVal > bestRate){
+      bestRate <- currTrRateVal
+      best_nn <- new_nn
+      bestIt <- 50 * i
+    }
+  }
+  return (list(nn = best_nn, nbIt=bestIt, scoreTrain = scoresT, scoreVal = scoresV, it=iterations, mseT=mseT,mseV=mseV))
+}
+
+cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold){
+  # mélange des indices
+  ind <- sample(1:dim(dataFt[1]),dim(dataFt[1]))
+  score <- NULL
+  
+  for(i in 1:fold){
+    cat("==================== ", i, " ====================\n")
+    valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
+    res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop)
+    score <- c(score, res$scoreTrain)
+    
+    par(fg = "black")
+    plot(res$it, res$mseT, type = "l")
+    par(fg = "red")
+    lines(res$it, res$mseV, type = "l")
+  }
 }
