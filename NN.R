@@ -16,4 +16,28 @@ for (j in 1:dim(dataObs)[1]){
   digits[j,] <- c(dataCl[j], profile$left, profile$right, centroid$row, centroid$col)
 }
 
-cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), 5, 10, 5)
+
+getNbN <- function(digits){
+  nbNLst <- NULL
+  meanMseTLst <- NULL
+  meanMseVLst <- NULL
+  for(nbN in 1:20){
+    cv <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), nbN, 10, 5)
+    nbNLst <- c(nbNLst, nbN)
+    meanMseTLst <- c(meanMseTLst,mean(cv$mseT))
+    meanMseVLst <- c(meanMseVLst,mean(cv$mseV))
+  }
+  
+  
+  par(fg = "black")
+  plot(nbNLst, meanMseTLst , type = "l")
+  par(fg = "red")
+  lines(nbNLst, meanMseVLst , type = "l")
+
+  return(nbNLst[match(c(min(meanMseTLst)), meanMseTLst)])
+}
+
+nb <- getNbN(digits)
+
+# save(maVar, file="mavar.RData")
+# load("maVar.RData")

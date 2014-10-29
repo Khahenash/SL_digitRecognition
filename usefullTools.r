@@ -103,18 +103,25 @@ cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold){
   # mélange des indices
   ind <- sample(1:dim(dataFt)[1],dim(dataFt)[1])
   score <- NULL
+  lstT <- NULL
+  lstV <- NULL
   
+  matT <- matrix(data = 0, nrow = fold, ncol = nbLoop+1)
   for(i in 1:fold){
     cat("==================== ", i, " ====================\n")
     valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
     res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop)
     score <- c(score, res$scoreTrain)
     
-    par(fg = "black")
-    plot(res$it, res$mseT, type = "l")
-    par(fg = "red")
-    lines(res$it, res$mseV, type = "l")
+    lstT <- c(lstT,min(res$mseT))
+    lstV <- c(lstV, min(res$mseV))
+    #par(fg = "black")
+    #plot(res$it, res$mseT, type = "l")
+    #par(fg = "red")
+    #lines(res$it, res$mseV, type = "l")
   }
+  
+  return(list(mseT = lstT, mseV = lstV))
 }
 
 
