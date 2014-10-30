@@ -71,9 +71,7 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop){
   iterations <- c(0)
   bestRate <- 0  
   bestIt <- 0
-  cat("Starting Reco rate = ",currTrRate,"\n")
   for(i in 1:nbLoop){
-    cat(i," / ", nbLoop, "\n")
     #continue the training
     new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=50, decay=1e-4, Wts=curr_w)
     curr_w <- new_nn$wts
@@ -108,7 +106,7 @@ cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold){
   
   matT <- matrix(data = 0, nrow = fold, ncol = nbLoop+1)
   for(i in 1:fold){
-    cat("==================== ", i, " ====================\n")
+    cat("==================== ", nbN, " : ", i, "/", fold, " ====================\n")
     valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
     res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop)
     score <- c(score, res$scoreTrain)
@@ -128,15 +126,14 @@ cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold){
 compute_profiles <- function (symbol, nr=5, nc=3){
   left_profile <- matrix(data=0, nrow = 1, ncol = nr)
   right_profile <- matrix(data=0, nrow = 1, ncol = nr)
-  top_profile <- NULL
-  bottom_profile <- NULL
+  top_profile <- matrix(data=0, nrow = 1, ncol = nc)
+  bottom_profile <- matrix(data=0, nrow = 1, ncol = nc)
   
   for(row in nr:1){
     found_left <- F
     best_right_elem <- 0
     
-    col <- 1
-    while(col <= nc){
+    for(col in 1:nc){
       if(symbol[(row-1)*nc+col] == 1 && !found_left){
         found_left <- T
         left_profile[row] <- ((row-1)*nc+col)
@@ -144,13 +141,46 @@ compute_profiles <- function (symbol, nr=5, nc=3){
       if(symbol[(row-1)*nc+col] == 1){
         best_right_elem <- ((row-1)*nc+col)
       }
-      col <- col +1
     }
     right_profile[row] <- best_right_elem
   }
   
-  return (list(left=left_profile, right=right_profile))
+  for(col in 1:nc){
+    found_top <- F
+    best_bottom_elem <- 0
+    
+    for(row in nr:1){
+      if(symbol[(row-1)*nc+col] == 1 && !found_top){
+        found_top <- T
+        top_profile[col] <- ((row-1)*nc+col)
+      }
+      if(symbol[(row-1)*nc+col] == 1){
+        best_bottom_elem <- ((row-1)*nc+col)
+      }
+    }
+    bottom_profile[col] <- best_bottom_elem
+  }
+  
+  return (list(left=left_profile, right=right_profile, top=top_profile, bottom=bottom_profile))
 }
+
+
+compute_projections <- function(symbol, nr=5, nc=3){
+  row_proj = matrix(0, 1, nr)
+  col_proj = matrix(0, 1, nc)
+  
+  for(col in 1:nc){
+    for(row in 1:nr){
+      if(symbol[(row-1)*nc+col] == 1){
+        row_proj[row] = row_proj[row]+1
+        col_proj[col] = col_proj[col]+1
+      }
+    }
+  }
+  
+  return(list(row=row_proj, col=col_proj))
+}
+
 
 compute_centroid <- function (symbol, nr=5, nc=3){
   nb_pts <- 0

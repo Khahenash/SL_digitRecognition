@@ -3,26 +3,28 @@ library("nnet")
 
 
 
-data <- loadAll("/home/khahenash/Documents/Signal/Projet/data_Digits_HMM/Data5X3/Train_compute_symbol_5_3Digit")
+data <- loadAll("/home/khahenash/Documents/Signal/Projet/data_Digits_HMM/Data7X5/Train_compute_symbol_7_5Digit")
 dataObs <- data$obs
 dataCl <- data$cl
-
-digits <- matrix(data=NA, nrow=dim(dataObs)[1], ncol=13 )
+nr = 7
+nc = 5
+digits <- matrix(data=NA, nrow=dim(dataObs)[1], ncol=(3*(nr+nc+1)) )
 
 for (j in 1:dim(dataObs)[1]){
-  img <- compute_img(dataObs[j,],5,3)
-  profile <- compute_profiles(img, 5, 3)
-  centroid <- compute_centroid(img, 5, 3)
-  digits[j,] <- c(dataCl[j], profile$left, profile$right, centroid$row, centroid$col)
+  img <- compute_img(dataObs[j,],nr,nc)
+  profile <- compute_profiles(img, nr, nc)
+  centroid <- compute_centroid(img, nr, nc)
+  projection <- compute_projections(img, nr, nc)
+  digits[j,] <- c(dataCl[j], profile$left, profile$right, profile$top, profile$bottom, projection$col, projection$row, centroid$row, centroid$col)
 }
 
 
-getNbN <- function(digits){
+getNbN <- function(digits, nbLoop, fold){
   nbNLst <- NULL
   meanMseTLst <- NULL
   meanMseVLst <- NULL
   for(nbN in 1:20){
-    cv <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), nbN, 10, 5)
+    cv <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), nbN, nbLoop, fold)
     nbNLst <- c(nbNLst, nbN)
     meanMseTLst <- c(meanMseTLst,mean(cv$mseT))
     meanMseVLst <- c(meanMseVLst,mean(cv$mseV))
@@ -37,7 +39,8 @@ getNbN <- function(digits){
   return(nbNLst[match(c(min(meanMseTLst)), meanMseTLst)])
 }
 
-nb <- getNbN(digits)
+nb <- getNbN(digits, 10, 5)
 
-# save(maVar, file="mavar.RData")
+# save(maVar, file="maVar.RData")
 # load("maVar.RData")
+
