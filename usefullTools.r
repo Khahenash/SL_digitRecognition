@@ -50,12 +50,12 @@ loadAll <- function(rootName){
   return (list(obs=allobs, cl=cl))
 }
 
-learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop){
+learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4){
   # init a new random MLP
   # nbN : nombre de neurones dans la couche cachée
   # pas d'iter pour avec un nn aléatoire
   
-  new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=0, decay=1e-4, rang = 1)
+  new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=0, decay=Nbdecay, rang = 1)
   best_nn = new_nn
   curr_w <- new_nn$wts
   # compute initial rates / mse and save them
@@ -73,7 +73,7 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop){
   bestIt <- 0
   for(i in 1:nbLoop){
     #continue the training
-    new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=50, decay=1e-4, Wts=curr_w)
+    new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=200, decay=1e-4, Wts=curr_w)
     curr_w <- new_nn$wts
     #compute the rates/MSE
     currTrRate <- test.reco(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
@@ -97,29 +97,32 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop){
   return (list(nn = best_nn, nbIt=bestIt, scoreTrain = scoresT, scoreVal = scoresV, it=iterations, mseT=mseT,mseV=mseV))
 }
 
-cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold){
+cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold, Nbdecay){
   # mélange des indices
   ind <- sample(1:dim(dataFt)[1],dim(dataFt)[1])
   score <- NULL
   lstT <- NULL
   lstV <- NULL
+  bestNN <- NULL
+  bestScoreV <- 0
   
   matT <- matrix(data = 0, nrow = fold, ncol = nbLoop+1)
   for(i in 1:fold){
     cat("==================== ", nbN, " : ", i, "/", fold, " ====================\n")
     valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
-    res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop)
+    res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop, Nbdecay)
+    
+    if(i==1 || max(res$scoreV)>bestScoreV){
+      bestScoreV <- max(res$scoreV)
+      bestNN <- res$nn
+    }
     score <- c(score, res$scoreTrain)
     
     lstT <- c(lstT,min(res$mseT))
     lstV <- c(lstV, min(res$mseV))
-    #par(fg = "black")
-    #plot(res$it, res$mseT, type = "l")
-    #par(fg = "red")
-    #lines(res$it, res$mseV, type = "l")
   }
   
-  return(list(mseT = lstT, mseV = lstV))
+  return(list(mseT = lstT, mseV = lstV, best_nn = bestNN))
 }
 
 
