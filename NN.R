@@ -77,18 +77,32 @@ getDecay <- function(digits, nbN, nbLoop, fold){
 }
 
 
-nb <- getNbN(digits, 20, 5)
-# nb 12
+# nb <- getNbN(digits, 20, 5)
+# nb 12 / 18 ?
 
 #dec <- getDecay(digits, 12, 20, 5)
 # 0.2
 
-res <- cross_val(digitsTest[,2:dim(digitsTest)[2]], class.ind(digitsTest[,1]), 12, 20, 5, 0.2)
-bestnn <- res$best_nn
+mseVlst = NULL
 
-cat("Reco rate (Test)  = ",test.reco(class.ind(digitsTest[,1]), predict(bestnn,digitsTest[,2:dim(digitsTest)[2]])),"/",dim(class.ind(digitsTest[,1]))[1],"\n")
+for (i in c(160, 180, 200, 220, 240, 260)){
+  res <- cross_val(digitsTest[,2:dim(digitsTest)[2]], class.ind(digitsTest[,1]), 18, 250, 5, 0.2)
+  mseVlst <- c(mseVlst, res$mseV)
+}
+par(fg = "black")
+plot(c(160, 180, 200, 220, 240, 260), mseVlst , type = "l")
+
+#res <- cross_val(digitsTest[,2:dim(digitsTest)[2]], class.ind(digitsTest[,1]), 18, 250, 5, 0.2)
+#bestnn <- res$best_nn
+
+#cat("Reco rate (Test)  = ",test.reco(class.ind(digitsTest[,1]), predict(bestnn,digitsTest[,2:dim(digitsTest)[2]])),"/",dim(class.ind(digitsTest[,1]))[1],"\n")
 
 #save(maVar, file="maVar.RData")
 # load("maVar.RData")
 
-save(bestnn, file="nn85-9.RData")
+#save(bestnn, file="nn85-9.RData")
+#save(bestnn, file="nn88-6.RData")
+#save(bestnn, file="nn89-5.RData")
+#save(bestnn, file="nn90-8.RData")
+#save(bestnn, file="nn92-2.RData")
+#save(bestnn, file="nn94.RData")
