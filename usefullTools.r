@@ -73,7 +73,7 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4
   bestIt <- 0
   for(i in 1:nbLoop){
     #continue the training
-    new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=200, decay=1e-4, Wts=curr_w)
+    new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=200, decay=Nbdecay, Wts=curr_w)
     curr_w <- new_nn$wts
     #compute the rates/MSE
     currTrRate <- test.reco(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
@@ -108,7 +108,7 @@ cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold, Nbdecay){
   
   matT <- matrix(data = 0, nrow = fold, ncol = nbLoop+1)
   for(i in 1:fold){
-    cat("==================== ", nbN, " : ", i, "/", fold, " ====================\n")
+    cat("==================== nbN: ", nbN, " decay: ", Nbdecay, "nbLoop: ", nbLoop, " : ", i, "/", fold, " ====================\n")
     valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
     res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop, Nbdecay)
     
