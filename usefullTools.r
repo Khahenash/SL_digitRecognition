@@ -86,12 +86,12 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4
     scoresV <- c(scoresV,currTrRateVal/length(valId))
     mseT <- c(mseT,currTrMSE)
     mseV <- c(mseV,currTrMSEVal)
-    iterations <- c(iterations, i * 50)
+    iterations <- c(iterations, i * 200)
     #save if best
     if(currTrRateVal > bestRate){
       bestRate <- currTrRateVal
       best_nn <- new_nn
-      bestIt <- 50 * i
+      bestIt <- 200 * i
     }
   }
   return (list(nn = best_nn, nbIt=bestIt, scoreTrain = scoresT, scoreVal = scoresV, it=iterations, mseT=mseT,mseV=mseV))

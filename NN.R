@@ -83,19 +83,20 @@ getDecay <- function(digits, nbN, nbLoop, fold){
 #dec <- getDecay(digits, 15, 20, 5)
 # 0.08
 # 
-mseVlst = NULL
+# mseVlst = NULL
+# 
+# for (i in c(160, 180, 200, 220, 240, 260)){
+#   res <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), 15, i, 5, 0.08)
+#   mseVlst <- c(mseVlst, res$mseV)
+# }
+# par(fg = "black")
+# mseVlst = c(mean(c(mseVlst[1], mseVlst[2], mseVlst[3], mseVlst[4], mseVlst[5])), mean(c(mseVlst[6], mseVlst[7], mseVlst[8], mseVlst[9], mseVlst[10])), mean(c(mseVlst[11], mseVlst[12], mseVlst[13], mseVlst[14], mseVlst[15])), mean(c(mseVlst[16], mseVlst[17], mseVlst[18], mseVlst[19], mseVlst[20])), mean(c(mseVlst[21], mseVlst[22], mseVlst[23], mseVlst[24], mseVlst[25])), mean(c(mseVlst[26], mseVlst[27], mseVlst[28], mseVlst[29], mseVlst[30])))
+# plot(c(160, 180, 200, 220, 240, 260), mseVlst, type = "l")
 
-for (i in c(160, 180, 200, 220, 240, 260)){
-  res <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), 15, i, 5, 0.08)
-  mseVlst <- c(mseVlst, res$mseV)
-}
-par(fg = "black")
-plot(1:30, mseVlst , type = "l")
+res <- cross_val(digitsTest[,2:dim(digitsTest)[2]], class.ind(digitsTest[,1]), 15, 200, 5, 0.08)
+bestnn <- res$best_nn
 
-#res <- cross_val(digitsTest[,2:dim(digitsTest)[2]], class.ind(digitsTest[,1]), 15, 200, 5, 0.08)
-#bestnn <- res$best_nn
-
-#cat("Reco rate (Test)  = ",test.reco(class.ind(digitsTest[,1]), predict(bestnn,digitsTest[,2:dim(digitsTest)[2]])),"/",dim(class.ind(digitsTest[,1]))[1],"\n")
+cat("Reco rate (Test)  = ",test.reco(class.ind(digitsTest[,1]), predict(bestnn,digitsTest[,2:dim(digitsTest)[2]])),"/",dim(class.ind(digitsTest[,1]))[1],"\n")
 # /!\ decay /!\
 
 
@@ -108,3 +109,5 @@ plot(1:30, mseVlst , type = "l")
 #save(bestnn, file="nn90-8.RData")
 #save(bestnn, file="nn92-2.RData")
 #save(bestnn, file="nn94.RData")
+
+#save(bestnn, file="nn94-9.RData")
