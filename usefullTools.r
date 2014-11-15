@@ -50,10 +50,7 @@ loadAll <- function(rootName){
   return (list(obs=allobs, cl=cl))
 }
 
-learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4){
-  # init a new random MLP
-  # nbN : nombre de neurones dans la couche cachée
-  # pas d'iter pour avec un nn aléatoire
+learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4, decr=1){
   
   new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=0, decay=Nbdecay, rang = 1)
   best_nn = new_nn
@@ -73,7 +70,9 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4
   bestIt <- 0
   for(i in 1:nbLoop){
     #continue the training
+    cat(Nbdecay)
     new_nn <- nnet(dataFt[trainId,], dataTarg[trainId,], size=nbN, maxit=200, decay=Nbdecay, Wts=curr_w)
+    Nbdecay = Nbdecay*decr
     curr_w <- new_nn$wts
     #compute the rates/MSE
     currTrRate <- test.reco(dataTarg[trainId,], predict(new_nn,dataFt[trainId,]))
@@ -97,7 +96,7 @@ learnVal <- function (dataFt, dataTarg,trainId, valId, nbN, nbLoop, Nbdecay=1e-4
   return (list(nn = best_nn, nbIt=bestIt, scoreTrain = scoresT, scoreVal = scoresV, it=iterations, mseT=mseT,mseV=mseV))
 }
 
-cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold, Nbdecay){
+cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold, Nbdecay, decr){
   # mélange des indices
   ind <- sample(1:dim(dataFt)[1],dim(dataFt)[1])
   score <- NULL
@@ -108,9 +107,9 @@ cross_val <- function (dataFt, dataTarg, nbN, nbLoop, fold, Nbdecay){
   
   matT <- matrix(data = 0, nrow = fold, ncol = nbLoop+1)
   for(i in 1:fold){
-    cat("==================== nbN: ", nbN, " decay: ", Nbdecay, "nbLoop: ", nbLoop, " : ", i, "/", fold, " ====================\n")
+    cat("==================== nbN: ", nbN, " decay init: ", Nbdecay, "nbLoop: ", nbLoop, " : ", i, "/", fold, " ====================\n")
     valId <- ind[((i-1)*floor(dim(dataFt)[1]/fold)+1):(i*floor(dim(dataFt)[1]/fold))]
-    res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop, Nbdecay)
+    res <- learnVal(dataFt, dataTarg, -valId, valId, nbN, nbLoop, Nbdecay, decr)
     
     if(i==1 || max(res$scoreV)>bestScoreV){
       bestScoreV <- max(res$scoreV)
@@ -216,4 +215,43 @@ compute_img <- function(symbol, nr, nc){
   }
   
   return (img)
+}
+
+
+getNbN <- function(digits, nbLoop, fold){
+  nbNLst <- NULL
+  meanMseTLst <- NULL
+  meanMseVLst <- NULL
+  for(nbN in 8:20){
+    cv <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), nbN, nbLoop, fold, 0.1)
+    nbNLst <- c(nbNLst, nbN)
+    meanMseTLst <- c(meanMseTLst,mean(cv$mseT))
+    meanMseVLst <- c(meanMseVLst,mean(cv$mseV))
+  }
+  
+  
+  par(fg = "black")
+  plot(nbNLst, meanMseTLst , type = "l")
+  par(fg = "red")
+  lines(nbNLst, meanMseVLst , type = "l")
+  
+  return(nbNLst[match(c(min(meanMseTLst)), meanMseTLst)])
+}
+
+getDecay <- function(digits, nbN, nbLoop, fold){
+  nbDLst <- NULL
+  meanMseTLst <- NULL
+  meanMseVLst <- NULL
+  for(i in c(0.02, 0.04, 0.06, 0.08, 0.1, 0.15, 0.2, 0.25)){
+    cv <- cross_val(digits[,2:dim(digits)[2]], class.ind(digits[,1]), nbN, nbLoop, fold, i)
+    nbDLst <- c(nbDLst, i)
+    meanMseTLst <- c(meanMseTLst,mean(cv$mseT))
+    meanMseVLst <- c(meanMseVLst,mean(cv$mseV))
+  }
+  
+  
+  par(fg = "black")
+  plot(nbDLst, meanMseVLst , type = "l")
+  
+  return(nbDLst[match(c(min(meanMseTLst)), meanMseTLst)])
 }
